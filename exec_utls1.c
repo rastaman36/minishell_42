@@ -3,56 +3,54 @@
 /*                                                        :::      ::::::::   */
 /*   exec_utls1.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: himejjad <himejjad@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mochaoui <mochaoui@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/02 11:58:23 by mochaoui          #+#    #+#             */
-/*   Updated: 2023/10/02 19:03:36 by himejjad         ###   ########.fr       */
+/*   Updated: 2023/10/03 00:53:32 by mochaoui         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-void	norming_fds(char c, int fd, char **string, int *j)
+void	check_in_out(char **string, char c, int fd, t_env *env)
 {
-	if (c == '<')
+	if (string[env->j][0] == c && string[env->j][1] != c \
+	&& string[env->j + 1][0] != c)
 	{
-		fd = open(string[*j], O_RDONLY);
-		if (fd == -1)
-			perror("check again fd");
+		env->s = ft_strdup(string[++env->j]);
+		if (c == '<')
+		{
+			fd = open(string[env->j], O_RDONLY);
+			if (fd == -1)
+				perror("check again fd");
+		}
+		else
+			fd = open(string[env->j], O_CREAT | O_WRONLY, 0644);
+		close(fd);
 	}
-	else
-		fd = open(string[*j], O_CREAT | O_WRONLY, 0644);
-}
-
-void	norming_fds1(t_env *env, char **string)
-{
-	env->fd = open("/tmp/.filess", O_CREAT | O_RDWR | O_TRUNC, 0777);
-	handling_here_doc(string[env->j], env->fd, env);
 }
 
 char	*geting_names_files(char **string, char c, t_env *env)
 {
+	int		fd;
+
 	env->j = 0;
-	env->fd = 0;
+	fd = 0;
 	env->s = NULL;
 	while (string[env->j])
 	{
-		if (string[env->j][0] == c && string[env->j][1] != c && string[env->j
-			+ 1][0] != c)
-		{
-			env->s = ft_strdup(string[++env->j]);
-			norming_fds(c, env->fd, string, &env->j);
-			close(env->fd);
-		}
-		else if (string[env->j][0] == c && string[env->j][1] == c
-				&& string[env->j][2] != c && string[env->j + 1][0] != c)
+		check_in_out(string, c, fd, env);
+		if (string[env->j][0] == c && string[env->j][1] == c \
+		&& string[env->j][2] != c && string[env->j + 1][0] != c)
 		{
 			env->s = ft_strdup(string[++env->j]);
 			if (c == '>')
-				env->fd = open(string[env->j], O_CREAT | O_WRONLY | O_APPEND,
-						0777);
+				fd = open(string[env->j], O_CREAT | O_WRONLY | O_APPEND, 0777);
 			else
-				norming_fds1(env, string);
+			{
+				fd = open("/tmp/.filess", O_CREAT | O_RDWR | O_TRUNC, 0777);
+				handling_here_doc(string[env->j], fd, env);
+			}
 		}
 		env->j++;
 	}
